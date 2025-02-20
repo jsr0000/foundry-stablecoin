@@ -39,8 +39,7 @@ pragma solidity ^0.8.19;
 import {DecentralisedStableCoin} from "src/DecentralisedStableCoin.sol";
 import {ReentrancyGuard} from "lib/openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol";
 import {IERC20} from "lib/forge-std/src/interfaces/IERC20.sol";
-import {AggregatorV3Interface} from "lib/forge-std/src/interfaces/IERC20.sol";
-
+// import {AggregatorV3Interface} from "lib/forge-std/src/interfaces/IERC20.sol";
 
 contract LEAFEngine is ReentrancyGuard {
     /* ERRORS */
@@ -136,18 +135,18 @@ contract LEAFEngine is ReentrancyGuard {
     }
 
     /**
-     * @param   amountDscToMint  The amount of LEAF you want to mint.
+     * @param   amountLeafToMint  The amount of LEAF you want to mint.
      * You can only mint LEAF if you have enough collateral.
      */
     function mintDsc(
-        uint256 amountDscToMint
+        uint256 amountLeafToMint
     ) public moreThanZero(amountLeafToMint) nonReentrant {
         s_LEAFMinted[msg.sender] += amountLeafToMint;
     }
 
     /* PRIVATE & INTERNAL VIEW FUNCTIONS */
 
-    function _revertIfHealthFactorIsBroken(address user) {}
+    function _revertIfHealthFactorIsBroken(address user) public {}
 
     /**
      * @param   user  .
