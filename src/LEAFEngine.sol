@@ -39,6 +39,8 @@ pragma solidity ^0.8.19;
 import {DecentralisedStableCoin} from "src/DecentralisedStableCoin.sol";
 import {ReentrancyGuard} from "lib/openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol";
 import {IERC20} from "lib/forge-std/src/interfaces/IERC20.sol";
+import {AggregatorV3Interface} from "lib/forge-std/src/interfaces/IERC20.sol";
+
 
 contract LEAFEngine is ReentrancyGuard {
     /* ERRORS */
@@ -94,6 +96,7 @@ contract LEAFEngine is ReentrancyGuard {
 
         for (uint256 i = 0; i < tokenAddresses.length; i++) {
             s_priceFeeds[tokenAddresses[i]] = priceFeedAddresses[i];
+            s_collateralTokens.push(tokenAddresses[i]);
         }
         i_dsc = DecentralisedStableCoin(dscAddress);
     }
@@ -166,5 +169,19 @@ contract LEAFEngine is ReentrancyGuard {
 
     /* PUBLIC & EXTERNAL VIEW FUNCTIONS */
 
-    function getAccountCollateralValue(address user) public pure {}
+    function getAccountCollateralValue(
+        address user
+    ) public view returns (uint256 totalCollateralValueInUsd) {
+        for (uint256 i = 0; i < s_collateralTokens.length; i++) {
+            address token = s_collateralTokens[i];
+            uint256 amount = s_collateralDeposited[user][token];
+            // totalCollateralValueInUsd +=
+        }
+        return totalCollateralValueInUsd;
+    }
+
+    function getUsdValue(
+        address token,
+        uint256 amount
+    ) public view returns (uint256) {}
 }
