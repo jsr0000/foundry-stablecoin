@@ -39,11 +39,64 @@ pragma solidity ^0.8.19;
 import {DecentralisedStableCoin} from "src/DecentralisedStableCoin.sol";
 
 contract LEAFEngine {
-    constructor() {}
+    /* ERRORS */
+
+    error LEAFEngine__NeedsMoreThanZero();
+    error DSCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength();
+    error DSCEngine__TokenNotAllowed();
+
+    /* STATE VAIRABLES */
+
+    mapping(address token => address priceFeed) private s_priceFeeds;
+    DecentralisedStableCoin private immutable i_dsc;
+
+    /* MODIFIERS */
+
+    modifier moreThanZero(uint256 amount) {
+        if (amount <= 0) {
+            revert LEAFEngine__NeedsMoreThanZero();
+        }
+        _;
+    }
+
+    modifier isAllowedToken(address token) {
+        if (s_priceFeeds[token] == address(0)) {
+            revert DSCEngine__TokenNotAllowed();
+        }
+        _;
+    }
+
+    /* CONSTRUCTOR */
+
+    constructor(
+        address[] memory tokenAddresses,
+        address[] memory priceFeedAddresses,
+        address dscAddress
+    ) {
+        if (tokenAddresses.length != priceFeedAddresses.length) {
+            revert DSCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength();
+        }
+
+        for (uint256 i = 0; i < tokenAddresses.length; i++) {
+            s_priceFeeds[tokenAddresses[i]] = priceFeedAddresses[i];
+        }
+        i_dsc = DecentralisedStableCoin(dscAddress);
+    }
+
+    /**
+     * @param   tokenCollateralAddress  The ERC20 token address of the collateral your depositing.
+     * @param   amountCollateral  The amount of collateral your depositing.
+     */
+    function depositCollateral(
+        address tokenCollateralAddress,
+        uint256 amountCollateral
+    )
+        external
+        moreThanZero(amountCollateral)
+        isAllowedToken(tokenCollateralAddress)
+    {}
 
     function depositCollateralAndMintDsc() external {}
-
-    function depositCollateral() external {}
 
     function redeemCollateralForDsc() external {}
 
