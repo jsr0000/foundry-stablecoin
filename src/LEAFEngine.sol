@@ -37,18 +37,31 @@ pragma solidity ^0.8.19;
  */
 
 import {DecentralisedStableCoin} from "src/DecentralisedStableCoin.sol";
+import {ReentrancyGuard} from "lib/openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol";
+import {IERC20} from "lib/forge-std/src/interfaces/IERC20.sol";
 
-contract LEAFEngine {
+contract LEAFEngine is ReentrancyGuard {
     /* ERRORS */
 
     error LEAFEngine__NeedsMoreThanZero();
-    error DSCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength();
-    error DSCEngine__TokenNotAllowed();
+    error LEAFEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength();
+    error LEAFEngine__TokenNotAllowed();
+    error LEAFEngine__TransferFailed();
 
     /* STATE VAIRABLES */
 
     mapping(address token => address priceFeed) private s_priceFeeds;
+    mapping(address user => mapping(address token => uint256 amount))
+        private s_collateralDeposited;
     DecentralisedStableCoin private immutable i_dsc;
+
+    /* EVENTS */
+
+    event collateralDeposited(
+        address indexed user,
+        address indexed token,
+        uint256 indexed amount
+    );
 
     /* MODIFIERS */
 
@@ -61,7 +74,7 @@ contract LEAFEngine {
 
     modifier isAllowedToken(address token) {
         if (s_priceFeeds[token] == address(0)) {
-            revert DSCEngine__TokenNotAllowed();
+            revert LEAFEngine__TokenNotAllowed();
         }
         _;
     }
@@ -74,7 +87,7 @@ contract LEAFEngine {
         address dscAddress
     ) {
         if (tokenAddresses.length != priceFeedAddresses.length) {
-            revert DSCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength();
+            revert LEAFEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength();
         }
 
         for (uint256 i = 0; i < tokenAddresses.length; i++) {
@@ -82,6 +95,8 @@ contract LEAFEngine {
         }
         i_dsc = DecentralisedStableCoin(dscAddress);
     }
+
+    /* EXTERNAL FUNCTIONS */
 
     /**
      * @param   tokenCollateralAddress  The ERC20 token address of the collateral your depositing.
@@ -94,7 +109,26 @@ contract LEAFEngine {
         external
         moreThanZero(amountCollateral)
         isAllowedToken(tokenCollateralAddress)
-    {}
+        nonReentrant
+    {
+        s_collateralDeposited[msg.sender][
+            tokenCollateralAddress
+        ] += amountCollateral;
+        emit collateralDeposited(
+            msg.sender,
+            tokenCollateralAddress,
+            amountCollateral
+        );
+        bool success = IERC20(tokenCollateralAddress).transferFrom(
+            msg.sender,
+            address(this),
+            amountCollateral
+        );
+
+        if (!success) {
+            revert LEAFEngine__TransferFailed();
+        }
+    }
 
     function depositCollateralAndMintDsc() external {}
 
