@@ -53,7 +53,9 @@ contract LEAFEngine is ReentrancyGuard {
     mapping(address token => address priceFeed) private s_priceFeeds;
     mapping(address user => mapping(address token => uint256 amount))
         private s_collateralDeposited;
+    mapping(address user => uint256 amountLeafMinted) private s_LEAFMinted;
     DecentralisedStableCoin private immutable i_dsc;
+    address[] private s_collateralTokens;
 
     /* EVENTS */
 
@@ -130,17 +132,39 @@ contract LEAFEngine is ReentrancyGuard {
         }
     }
 
-    function depositCollateralAndMintDsc() external {}
+    /**
+     * @param   amountDscToMint  The amount of LEAF you want to mint.
+     * You can only mint LEAF if you have enough collateral.
+     */
+    function mintDsc(
+        uint256 amountDscToMint
+    ) public moreThanZero(amountLeafToMint) nonReentrant {
+        s_LEAFMinted[msg.sender] += amountLeafToMint;
+    }
 
-    function redeemCollateralForDsc() external {}
+    /* PRIVATE & INTERNAL VIEW FUNCTIONS */
 
-    function redeemCollateral() external {}
+    function _revertIfHealthFactorIsBroken(address user) {}
 
-    function mintDsc() external {}
+    /**
+     * @param   user  .
+     * @return  uint256  Returns how close to liquidation a user is.
+     * If a user goes below 1, then they can be liquidated.
+     */
+    function _healthFactor(address user) private view returns (uint256) {}
 
-    function burnDsc() external {}
+    function _getAccountInformation(
+        address user
+    )
+        private
+        view
+        returns (uint256 totalLeafMinted, uint256 collateralValueInUsd)
+    {
+        totalLeafMinted = s_LEAFMinted[user];
+        collateralValueInUsd = getAccountCollateralValue(user);
+    }
 
-    function liquidate() external {}
+    /* PUBLIC & EXTERNAL VIEW FUNCTIONS */
 
-    function getHealthFactor() external view {}
+    function getAccountCollateralValue(address user) public pure {}
 }
