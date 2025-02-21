@@ -39,7 +39,7 @@ pragma solidity ^0.8.19;
 import {DecentralisedStableCoin} from "src/DecentralisedStableCoin.sol";
 import {ReentrancyGuard} from "lib/openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol";
 import {IERC20} from "lib/forge-std/src/interfaces/IERC20.sol";
-// import {AggregatorV3Interface} from "";
+import {AggregatorV3Interface} from "lib/chainlink-brownie-contracts/contracts/src/v0.4/interfaces/AggregatorV3Interface.sol";
 
 contract LEAFEngine is ReentrancyGuard {
     /* ERRORS */
@@ -60,6 +60,8 @@ contract LEAFEngine is ReentrancyGuard {
 
     uint256 private constant ADDITIONAL_FEED_PRECISION = 1e10;
     uint256 private constant PRECISION = 1e18;
+    uint256 private constant LIQUIDATION_THRESHOLD = 50;
+    uint256 private constant LIQUIDATION_PRECISION = 100;
 
     /* EVENTS */
 
@@ -156,7 +158,15 @@ contract LEAFEngine is ReentrancyGuard {
      * @return  uint256  Returns how close to liquidation a user is.
      * If a user goes below 1, then they can be liquidated.
      */
-    function _healthFactor(address user) private view returns (uint256) {}
+    function _healthFactor(address user) private view returns (uint256) {
+        (
+            uint256 totalLeafMinted,
+            uint256 collateralValueInUsd
+        ) = _getAccountInformation(user);
+        uint256 collateralAdjustedForThreshold = (collateralValueInUsd *
+            LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION;
+        return (collateralAdjustedForThreshold * PRECISION) / totalLeafMinted;
+    }
 
     function _getAccountInformation(
         address user
@@ -190,7 +200,7 @@ contract LEAFEngine is ReentrancyGuard {
             s_priceFeeds[token]
         );
         (, int256 price, , , ) = priceFeed.latestRoundData();
-        return ((uint256(price * ADDITIONAL_FEED_PRECISION) * amount) /
-            PRECISION);
+        return
+            ((uint256(price) * ADDITIONAL_FEED_PRECISION) * amount) / PRECISION;
     }
 }
