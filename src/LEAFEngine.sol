@@ -49,6 +49,7 @@ contract LEAFEngine is ReentrancyGuard {
     error LEAFEngine__TokenNotAllowed(address token);
     error LEAFEngine__TransferFailed();
     error LEAFEngine__BreaksHealthFactor(uint256 healthFactor);
+    error LEAFEngine__MintFailed();
 
     /* STATE VAIRABLES */
 
@@ -56,7 +57,7 @@ contract LEAFEngine is ReentrancyGuard {
     mapping(address user => mapping(address token => uint256 amount))
         private s_collateralDeposited;
     mapping(address user => uint256 amountLeafMinted) private s_LEAFMinted;
-    DecentralisedStableCoin private immutable i_dsc;
+    DecentralisedStableCoin private immutable i_leaf;
     address[] private s_collateralTokens;
 
     uint256 private constant ADDITIONAL_FEED_PRECISION = 1e10;
@@ -94,7 +95,7 @@ contract LEAFEngine is ReentrancyGuard {
     constructor(
         address[] memory tokenAddresses,
         address[] memory priceFeedAddresses,
-        address dscAddress
+        address leafAddress
     ) {
         if (tokenAddresses.length != priceFeedAddresses.length) {
             revert LEAFEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength();
@@ -104,7 +105,7 @@ contract LEAFEngine is ReentrancyGuard {
             s_priceFeeds[tokenAddresses[i]] = priceFeedAddresses[i];
             s_collateralTokens.push(tokenAddresses[i]);
         }
-        i_dsc = DecentralisedStableCoin(dscAddress);
+        i_leaf = DecentralisedStableCoin(leafAddress);
     }
 
     /* EXTERNAL FUNCTIONS */
@@ -149,6 +150,12 @@ contract LEAFEngine is ReentrancyGuard {
         uint256 amountLeafToMint
     ) public moreThanZero(amountLeafToMint) nonReentrant {
         s_LEAFMinted[msg.sender] += amountLeafToMint;
+        _revertIfHealthFactorIsBroken(msg.sender);
+        bool minted = i_leaf.mint(msg.sender, amountLeafToMint);
+
+        if (!minted) {
+            revert LEAFEngine__MintFailed();
+        }
     }
 
     /* PRIVATE & INTERNAL VIEW FUNCTIONS */
