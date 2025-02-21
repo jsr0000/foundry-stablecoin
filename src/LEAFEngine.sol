@@ -39,7 +39,7 @@ pragma solidity ^0.8.19;
 import {DecentralisedStableCoin} from "src/DecentralisedStableCoin.sol";
 import {ReentrancyGuard} from "lib/openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol";
 import {IERC20} from "lib/forge-std/src/interfaces/IERC20.sol";
-// import {AggregatorV3Interface} from "lib/forge-std/src/interfaces/IERC20.sol";
+// import {AggregatorV3Interface} from "";
 
 contract LEAFEngine is ReentrancyGuard {
     /* ERRORS */
@@ -57,6 +57,9 @@ contract LEAFEngine is ReentrancyGuard {
     mapping(address user => uint256 amountLeafMinted) private s_LEAFMinted;
     DecentralisedStableCoin private immutable i_dsc;
     address[] private s_collateralTokens;
+
+    uint256 private constant ADDITIONAL_FEED_PRECISION = 1e10;
+    uint256 private constant PRECISION = 1e18;
 
     /* EVENTS */
 
@@ -174,7 +177,7 @@ contract LEAFEngine is ReentrancyGuard {
         for (uint256 i = 0; i < s_collateralTokens.length; i++) {
             address token = s_collateralTokens[i];
             uint256 amount = s_collateralDeposited[user][token];
-            // totalCollateralValueInUsd +=
+            totalCollateralValueInUsd += getUsdValue(token, amount);
         }
         return totalCollateralValueInUsd;
     }
@@ -182,5 +185,12 @@ contract LEAFEngine is ReentrancyGuard {
     function getUsdValue(
         address token,
         uint256 amount
-    ) public view returns (uint256) {}
+    ) public view returns (uint256) {
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(
+            s_priceFeeds[token]
+        );
+        (, int256 price, , , ) = priceFeed.latestRoundData();
+        return ((uint256(price * ADDITIONAL_FEED_PRECISION) * amount) /
+            PRECISION);
+    }
 }
