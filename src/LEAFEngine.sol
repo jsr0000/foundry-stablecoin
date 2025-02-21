@@ -46,8 +46,9 @@ contract LEAFEngine is ReentrancyGuard {
 
     error LEAFEngine__NeedsMoreThanZero();
     error LEAFEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength();
-    error LEAFEngine__TokenNotAllowed();
+    error LEAFEngine__TokenNotAllowed(address token);
     error LEAFEngine__TransferFailed();
+    error LEAFEngine__BreaksHealthFactor(uint256 healthFactor);
 
     /* STATE VAIRABLES */
 
@@ -62,6 +63,7 @@ contract LEAFEngine is ReentrancyGuard {
     uint256 private constant PRECISION = 1e18;
     uint256 private constant LIQUIDATION_THRESHOLD = 50;
     uint256 private constant LIQUIDATION_PRECISION = 100;
+    uint256 private constant MIN_HEALTH_FACTOR = 1e18;
 
     /* EVENTS */
 
@@ -82,7 +84,7 @@ contract LEAFEngine is ReentrancyGuard {
 
     modifier isAllowedToken(address token) {
         if (s_priceFeeds[token] == address(0)) {
-            revert LEAFEngine__TokenNotAllowed();
+            revert LEAFEngine__TokenNotAllowed(token);
         }
         _;
     }
@@ -151,7 +153,12 @@ contract LEAFEngine is ReentrancyGuard {
 
     /* PRIVATE & INTERNAL VIEW FUNCTIONS */
 
-    function _revertIfHealthFactorIsBroken(address user) public {}
+    function _revertIfHealthFactorIsBroken(address user) internal view {
+        uint256 userHealthFactor = _healthFactor(user);
+        if (userHealthFactor < MIN_HEALTH_FACTOR) {
+            revert LEAFEngine__BreaksHealthFactor(userHealthFactor);
+        }
+    }
 
     /**
      * @param   user  .
