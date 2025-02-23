@@ -36,7 +36,7 @@ pragma solidity ^0.8.19;
  * @notice  This contract is very loosely based on the MakerDAO DSS (DAI) system.
  */
 
-import {DecentralisedStableCoin} from "src/DecentralisedStableCoin.sol";
+import {LEAFStableCoin} from "src/LEAFStableCoin.sol";
 import {ReentrancyGuard} from "lib/openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol";
 import {IERC20} from "lib/forge-std/src/interfaces/IERC20.sol";
 import {AggregatorV3Interface} from "lib/chainlink-brownie-contracts/contracts/src/v0.4/interfaces/AggregatorV3Interface.sol";
@@ -57,7 +57,7 @@ contract LEAFEngine is ReentrancyGuard {
     mapping(address user => mapping(address token => uint256 amount))
         private s_collateralDeposited;
     mapping(address user => uint256 amountLeafMinted) private s_LEAFMinted;
-    DecentralisedStableCoin private immutable i_leaf;
+    LEAFStableCoin private immutable i_leaf;
     address[] private s_collateralTokens;
 
     uint256 private constant ADDITIONAL_FEED_PRECISION = 1e10;
@@ -105,7 +105,7 @@ contract LEAFEngine is ReentrancyGuard {
             s_priceFeeds[tokenAddresses[i]] = priceFeedAddresses[i];
             s_collateralTokens.push(tokenAddresses[i]);
         }
-        i_leaf = DecentralisedStableCoin(leafAddress);
+        i_leaf = LEAFStableCoin(leafAddress);
     }
 
     /* EXTERNAL FUNCTIONS */

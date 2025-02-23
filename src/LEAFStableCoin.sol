@@ -40,15 +40,12 @@ import {Ownable} from "lib/openzeppelin-contracts/contracts/access/Ownable.sol";
 DSCEngine smart contract.
  */
 
-contract DecentralisedStableCoin is ERC20Burnable, Ownable {
+contract LEAFStableCoin is ERC20Burnable, Ownable {
     error DecentralisedStableCoin__MustBeMoreThanZero();
     error DecentralisedStableCoin__BurnAmountExceedsBalance();
     error DecentralisedStableCoin__CantMintToZeroAddress();
 
-    constructor()
-        ERC20("Leaf", "LEAF")
-        Ownable(address(msg.sender))
-    {}
+    constructor() ERC20("Leaf", "LEAF") Ownable(address(msg.sender)) {}
 
     function burn(uint256 _amount) public override onlyOwner {
         uint256 balance = balanceOf(msg.sender);
