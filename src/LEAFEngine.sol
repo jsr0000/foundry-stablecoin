@@ -73,6 +73,11 @@ contract LEAFEngine is ReentrancyGuard {
         address indexed token,
         uint256 indexed amount
     );
+    event CollateralRedeemed(
+        address indexed user,
+        address indexed token,
+        uint256 indexed amount
+    );
 
     /* MODIFIERS */
 
@@ -171,6 +176,49 @@ contract LEAFEngine is ReentrancyGuard {
     ) external {
         depositCollateral(tokenCollateralAddress, amountCollateral);
         mintLEAF(amountLeafToMint);
+    }
+
+    function redeemCollateral(
+        address tokenCollateralAddress,
+        uint256 amountCollateral
+    ) public moreThanZero(amountCollateral) nonReentrant {
+        _s_collateralDeposited[msg.sender][
+            tokenCollateralAddress
+        ] -= amountCollateral;
+        emit CollateralRedeemed(
+            msg.sender,
+            tokenCollateralAddress,
+            amountCollateral
+        );
+
+        bool success = IERC20(tokenCollateralAddress).transfer(
+            msg.sender,
+            amountCollateral
+        );
+        if (!success) {
+            revert LEAFEngine__TransferFailed();
+        }
+
+        _revertIfHealthFactorIsBroken(msg.sender);
+    }
+
+    function burnLEAF(uint256 amount) public moreThanZero(amount) {
+        _s_LEAFMinted[msg.sender] -= amount;
+        bool success = _i_leaf.transferFrom(msg.sender, address(this), amount);
+        if (!success) {
+            revert LEAFEngine__TransferFailed();
+        }
+        _i_leaf.burn(amount);
+        _revertIfHealthFactorIsBroken(msg.sender);
+    }
+
+    function redeemCollateralForLEAF(
+        address tokenCollateralAddress,
+        uint256 amountCollateral,
+        uint256 amountLEAFToBurn
+    ) external {
+        burnLEAF(amountLEAFToBurn);
+        redeemCollateral(tokenCollateralAddress, amountCollateral);
     }
 
     /* PRIVATE & INTERNAL VIEW FUNCTIONS */
