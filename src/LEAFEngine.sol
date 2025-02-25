@@ -68,7 +68,7 @@ contract LEAFEngine is ReentrancyGuard {
 
     /* EVENTS */
 
-    event collateralDeposited (
+    event CollateralDeposited(
         address indexed user,
         address indexed token,
         uint256 indexed amount
@@ -118,7 +118,7 @@ contract LEAFEngine is ReentrancyGuard {
         address tokenCollateralAddress,
         uint256 amountCollateral
     )
-        external
+        public
         moreThanZero(amountCollateral)
         isAllowedToken(tokenCollateralAddress)
         nonReentrant
@@ -126,7 +126,7 @@ contract LEAFEngine is ReentrancyGuard {
         _s_collateralDeposited[msg.sender][
             tokenCollateralAddress
         ] += amountCollateral;
-        emit collateralDeposited(
+        emit CollateralDeposited(
             msg.sender,
             tokenCollateralAddress,
             amountCollateral
@@ -146,7 +146,7 @@ contract LEAFEngine is ReentrancyGuard {
      * @param   amountLeafToMint  The amount of LEAF you want to mint.
      * You can only mint LEAF if you have enough collateral.
      */
-    function mintDsc(
+    function mintLEAF(
         uint256 amountLeafToMint
     ) public moreThanZero(amountLeafToMint) nonReentrant {
         _s_LEAFMinted[msg.sender] += amountLeafToMint;
@@ -156,6 +156,21 @@ contract LEAFEngine is ReentrancyGuard {
         if (!minted) {
             revert LEAFEngine__MintFailed();
         }
+    }
+
+    /**
+     * @notice  This function will deposit collateral and mint LEAF in one function.
+     * @param   tokenCollateralAddress  the address of the token to deposit as collateral
+     * @param   amountCollateral  The amount of collateral to deposit
+     * @param   amountLeafToMint  The amount of LEAF to mint.
+     */
+    function depositCollateralAndMintLEAF(
+        address tokenCollateralAddress,
+        uint256 amountCollateral,
+        uint256 amountLeafToMint
+    ) external {
+        depositCollateral(tokenCollateralAddress, amountCollateral);
+        mintLEAF(amountLeafToMint);
     }
 
     /* PRIVATE & INTERNAL VIEW FUNCTIONS */
@@ -215,6 +230,7 @@ contract LEAFEngine is ReentrancyGuard {
         );
         (, int256 price, , , ) = priceFeed.latestRoundData();
         return
-            ((uint256(price) * _ADDITIONAL_FEED_PRECISION) * amount) / _PRECISION;
+            ((uint256(price) * _ADDITIONAL_FEED_PRECISION) * amount) /
+            _PRECISION;
     }
 }
