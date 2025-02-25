@@ -39,7 +39,7 @@ pragma solidity ^0.8.19;
 import {LEAFStableCoin} from "src/LEAFStableCoin.sol";
 import {ReentrancyGuard} from "lib/openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol";
 import {IERC20} from "lib/forge-std/src/interfaces/IERC20.sol";
-import {AggregatorV3Interface} from "lib/chainlink-brownie-contracts/contracts/src/v0.4/interfaces/AggregatorV3Interface.sol";
+import {AggregatorV3Interface} from "lib/chainlink-brownie-contracts/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 
 contract LEAFEngine is ReentrancyGuard {
     /* ERRORS */
@@ -68,7 +68,7 @@ contract LEAFEngine is ReentrancyGuard {
 
     /* EVENTS */
 
-    event collateralDeposited(
+    event collateralDeposited (
         address indexed user,
         address indexed token,
         uint256 indexed amount
