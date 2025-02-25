@@ -12,7 +12,7 @@ contract DeployLeaf is Script {
     address[] public tokenAddresses;
     address[] public priceFeedAddresses;
 
-    function run() external returns (LEAFStableCoin, LEAFEngine) {
+    function run() external returns (LEAFStableCoin, LEAFEngine, HelperConfig) {
         HelperConfig config = new HelperConfig();
 
         (
@@ -35,6 +35,6 @@ contract DeployLeaf is Script {
         );
         leaf.transferOwnership(address(engine));
         vm.stopBroadcast();
-        return (leaf, engine);
+        return (leaf, engine, config);
     }
 }
