@@ -50,6 +50,8 @@ contract LEAFEngine is ReentrancyGuard {
     error LEAFEngine__TransferFailed();
     error LEAFEngine__BreaksHealthFactor(uint256 healthFactor);
     error LEAFEngine__MintFailed();
+    error LEAFEngine__HealthFactorOk();
+    error LEAFEngine__HealthFactorNotImproved();
 
     /* STATE VAIRABLES */
 
@@ -65,6 +67,7 @@ contract LEAFEngine is ReentrancyGuard {
     uint256 private constant _LIQUIDATION_THRESHOLD = 50;
     uint256 private constant _LIQUIDATION_PRECISION = 100;
     uint256 private constant _MIN_HEALTH_FACTOR = 1e18;
+    uint256 private constant _LIQUIDATION_BONUS = 10;
 
     /* EVENTS */
 
@@ -74,9 +77,10 @@ contract LEAFEngine is ReentrancyGuard {
         uint256 indexed amount
     );
     event CollateralRedeemed(
-        address indexed user,
+        address indexed redeemedFrom,
+        address indexed redeemedTo,
         address indexed token,
-        uint256 indexed amount
+        uint256 amount
     );
 
     /* MODIFIERS */
@@ -182,33 +186,18 @@ contract LEAFEngine is ReentrancyGuard {
         address tokenCollateralAddress,
         uint256 amountCollateral
     ) public moreThanZero(amountCollateral) nonReentrant {
-        _s_collateralDeposited[msg.sender][
-            tokenCollateralAddress
-        ] -= amountCollateral;
-        emit CollateralRedeemed(
-            msg.sender,
+        _redeemCollateral(
             tokenCollateralAddress,
-            amountCollateral
-        );
-
-        bool success = IERC20(tokenCollateralAddress).transfer(
+            amountCollateral,
             msg.sender,
-            amountCollateral
+            msg.sender
         );
-        if (!success) {
-            revert LEAFEngine__TransferFailed();
-        }
 
         _revertIfHealthFactorIsBroken(msg.sender);
     }
 
     function burnLEAF(uint256 amount) public moreThanZero(amount) {
-        _s_LEAFMinted[msg.sender] -= amount;
-        bool success = _i_leaf.transferFrom(msg.sender, address(this), amount);
-        if (!success) {
-            revert LEAFEngine__TransferFailed();
-        }
-        _i_leaf.burn(amount);
+        _burnLEAF(amount, msg.sender, msg.sender);
         _revertIfHealthFactorIsBroken(msg.sender);
     }
 
@@ -220,6 +209,56 @@ contract LEAFEngine is ReentrancyGuard {
         burnLEAF(amountLEAFToBurn);
         redeemCollateral(tokenCollateralAddress, amountCollateral);
     }
+
+    /**
+     * @notice  You can partially liquidate a user.
+     * @notice  You will get a 10% _LIQUIDATION_BONUS for taking the users funds.
+     * @notice  This function working assumes that the protocol will be roughly 150% overcollateralized.
+     * @param   collateral  The ERC20 token address of the collateral your using to make the protocol solvent again.
+     * This is collateral that your going to take from the user who is insolvent.
+     * In return, you have to burn your LEAF to pay off their debt, but you dont pay off your own.
+     * @param   user  The user who is insolvent. They have to have a _healthFactor below _MIN_HEALTH_FACTOR.
+     * @param   debtToCover  The amount of LEAF to burn in order to cover the users debt.
+     */
+    function liquidate(
+        address collateral,
+        address user,
+        uint256 debtToCover
+    ) external moreThanZero(debtToCover) nonReentrant {
+        uint256 startingUserHealthFactor = _healthFactor(user);
+        if (startingUserHealthFactor > _MIN_HEALTH_FACTOR) {
+            revert LEAFEngine__HealthFactorOk();
+        }
+
+        uint256 tokenAmountFromDebtCovered = getTokenAmountFromUsd(
+            collateral,
+            debtToCover
+        );
+
+        uint256 bonusCollateral = (tokenAmountFromDebtCovered *
+            _LIQUIDATION_BONUS) / _LIQUIDATION_PRECISION;
+
+        uint256 totalCollateralToRedeem = tokenAmountFromDebtCovered +
+            bonusCollateral;
+
+        _redeemCollateral(
+            collateral,
+            totalCollateralToRedeem,
+            user,
+            msg.sender
+        );
+
+        _burnLEAF(debtToCover, user, msg.sender);
+
+        uint256 endingUserHealthFactor = _healthFactor(user);
+        if (endingUserHealthFactor <= startingUserHealthFactor) {
+            revert LEAFEngine__HealthFactorNotImproved();
+        }
+
+        _revertIfHealthFactorIsBroken(msg.sender);
+    }
+
+    function getHealthFactor() external {}
 
     /* PRIVATE & INTERNAL VIEW FUNCTIONS */
 
@@ -256,6 +295,53 @@ contract LEAFEngine is ReentrancyGuard {
         collateralValueInUsd = getAccountCollateralValue(user);
     }
 
+    function _redeemCollateral(
+        address tokenCollateralAddress,
+        uint256 amountCollateral,
+        address from,
+        address to
+    ) private {
+        _s_collateralDeposited[from][
+            tokenCollateralAddress
+        ] -= amountCollateral;
+        emit CollateralRedeemed(
+            from,
+            to,
+            tokenCollateralAddress,
+            amountCollateral
+        );
+        bool success = IERC20(tokenCollateralAddress).transfer(
+            to,
+            amountCollateral
+        );
+        if (!success) {
+            revert LEAFEngine__TransferFailed();
+        }
+        emit CollateralRedeemed(
+            from,
+            to,
+            tokenCollateralAddress,
+            amountCollateral
+        );
+    }
+
+    function _burnLEAF(
+        uint256 amountLeafToBurn,
+        address onBehalfOf,
+        address leafFrom
+    ) private moreThanZero(amountLeafToBurn) {
+        _s_LEAFMinted[onBehalfOf] -= amountLeafToBurn;
+        bool success = _i_leaf.transferFrom(
+            leafFrom,
+            address(this),
+            amountLeafToBurn
+        );
+        if (!success) {
+            revert LEAFEngine__TransferFailed();
+        }
+        _i_leaf.burn(amountLeafToBurn);
+    }
+
     /* PUBLIC & EXTERNAL VIEW FUNCTIONS */
 
     function getAccountCollateralValue(
@@ -280,5 +366,19 @@ contract LEAFEngine is ReentrancyGuard {
         return
             ((uint256(price) * _ADDITIONAL_FEED_PRECISION) * amount) /
             _PRECISION;
+    }
+
+    function getTokenAmountFromUsd(
+        address token,
+        uint256 usdAmountInWei
+    ) public view returns (uint256) {
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(
+            _s_priceFeeds[token]
+        );
+        (, int256 price, , , ) = priceFeed.latestRoundData();
+
+        return
+            (usdAmountInWei * _PRECISION) /
+            (uint256(price) * _ADDITIONAL_FEED_PRECISION);
     }
 }
