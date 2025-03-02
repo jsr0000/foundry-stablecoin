@@ -15,7 +15,10 @@ contract LEAFEngineTest is Test {
     LEAFEngine _engine;
     HelperConfig _config;
     address _weth;
+    address _btc;
     address _ethUsdPriceFeed;
+    address _btcUsdPriceFeed;
+
     address public USER = makeAddr("user");
     uint256 public constant AMOUNT_COLLATERAL = 10 ether;
     uint256 public constant STARTING_ERC20_BALANCE = 10 ether;
@@ -28,7 +31,28 @@ contract LEAFEngineTest is Test {
         ERC20Mock(_weth).mint(USER, STARTING_ERC20_BALANCE);
     }
 
+    // CONSTRUCTOR TESTS //
+
+    address[] public tokenAddresses;
+    address[] public feedAddresses;
+
+    function testRevertIfTokenLengthDoesntMatchPriceFeeds() public {
+        tokenAddresses.push(_weth);
+        feedAddresses.push(_ethUsdPriceFeed);
+        feedAddresses.push(_btcUsdPriceFeed);
+
+        vm.expectRevert(LEAFEngine.LEAFEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength.selector);
+        new LEAFEngine(tokenAddresses, feedAddresses, address(_leaf));
+    }
+
     // PRICE TESTS //
+
+    function testGetTokenAmountFromUsd() public {
+        // If you want $100 of WETH @ $2000/WETH, that would be 0.05 WETH
+        uint256 expectedWeth = 0.05 ether;
+        uint256 amountWeth = _engine.getTokenAmountFromUsd(_weth, 100 ether);
+        assertEq(amountWeth, expectedWeth);
+    }
 
     function testGetUsdValue() public view {
         uint256 ethAmount = 15e18;

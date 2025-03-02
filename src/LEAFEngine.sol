@@ -279,6 +279,14 @@ contract LEAFEngine is ReentrancyGuard {
             uint256 totalLeafMinted,
             uint256 collateralValueInUsd
         ) = _getAccountInformation(user);
+        return _calculateHealthFactor(totalLeafMinted, collateralValueInUsd);
+    }
+
+    function _calculateHealthFactor(
+        uint256 totalLeafMinted,
+        uint256 collateralValueInUsd
+    ) internal pure returns (uint256) {
+        if (totalLeafMinted == 0) return type(uint256).max;
         uint256 collateralAdjustedForThreshold = (collateralValueInUsd *
             _LIQUIDATION_THRESHOLD) / _LIQUIDATION_PRECISION;
         return (collateralAdjustedForThreshold * _PRECISION) / totalLeafMinted;
