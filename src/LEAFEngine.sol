@@ -196,18 +196,23 @@ contract LEAFEngine is ReentrancyGuard {
         _revertIfHealthFactorIsBroken(msg.sender);
     }
 
-    function burnLEAF(uint256 amount) public moreThanZero(amount) {
+    function burnLEAF(uint256 amount) external moreThanZero(amount) {
         _burnLEAF(amount, msg.sender, msg.sender);
         _revertIfHealthFactorIsBroken(msg.sender);
     }
 
-    function redeemCollateralForLEAF(
+   function redeemCollateralForLEAF(
         address tokenCollateralAddress,
         uint256 amountCollateral,
         uint256 amountLEAFToBurn
-    ) external {
-        burnLEAF(amountLEAFToBurn);
-        redeemCollateral(tokenCollateralAddress, amountCollateral);
+    )
+        external
+        moreThanZero(amountCollateral)
+        isAllowedToken(tokenCollateralAddress)
+    {
+        _burnLEAF(amountLEAFToBurn, msg.sender, msg.sender);
+        _redeemCollateral(tokenCollateralAddress, amountCollateral, msg.sender, msg.sender);
+        _revertIfHealthFactorIsBroken(msg.sender);
     }
 
     /**
@@ -337,7 +342,7 @@ contract LEAFEngine is ReentrancyGuard {
         uint256 amountLeafToBurn,
         address onBehalfOf,
         address leafFrom
-    ) private moreThanZero(amountLeafToBurn) {
+    ) private  {
         _s_LEAFMinted[onBehalfOf] -= amountLeafToBurn;
         bool success = _i_leaf.transferFrom(
             leafFrom,
@@ -374,6 +379,14 @@ contract LEAFEngine is ReentrancyGuard {
         return
             ((uint256(price) * _ADDITIONAL_FEED_PRECISION) * amount) /
             _PRECISION;
+    }
+
+    function getCollateralBalanceOfUser(address user, address token) external view returns (uint256) {
+        return _s_collateralDeposited[user][token];
+    }
+
+    function getAccountInformation(address user) external view returns(uint256 totalLeafMinted, uint256 collateralValueInUsd) {
+        return _getAccountInformation(user);
     }
 
     function getTokenAmountFromUsd(

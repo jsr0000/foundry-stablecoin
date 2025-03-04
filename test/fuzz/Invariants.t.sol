@@ -12,7 +12,6 @@ import {IERC20} from "lib/forge-std/src/interfaces/IERC20.sol";
 import {Handler} from "test/fuzz/Handler.t.sol";
 
 contract InvariantsTest is StdInvariant, Test {
-    DeployLeaf deployer;
     LEAFEngine engine;
     LEAFStableCoin leaf;
     HelperConfig config;
@@ -21,9 +20,10 @@ contract InvariantsTest is StdInvariant, Test {
     Handler handler;
 
     function setUp() external {
-        deployer = new DeployLeaf();
+        DeployLeaf deployer = new DeployLeaf();
         (leaf, engine, config) = deployer.run();
         (, , weth, wbtc, ) = config.activeNetworkConfig();
+        handler = new Handler(engine, leaf);
         targetContract(address(handler));
     }
 

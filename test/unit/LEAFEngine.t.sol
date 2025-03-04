@@ -47,7 +47,7 @@ contract LEAFEngineTest is Test {
 
     // PRICE TESTS //
 
-    function testGetTokenAmountFromUsd() public {
+    function testGetTokenAmountFromUsd() public view{
         // If you want $100 of WETH @ $2000/WETH, that would be 0.05 WETH
         uint256 expectedWeth = 0.05 ether;
         uint256 amountWeth = _engine.getTokenAmountFromUsd(_weth, 100 ether);
