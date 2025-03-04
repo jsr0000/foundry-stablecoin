@@ -415,17 +415,17 @@ contract LEAFEngine is ReentrancyGuard {
     }
 
     function getCollateralTokens() external view returns (address[] memory) {
-        return s_collateralTokens;
+        return _s_collateralTokens;
     }
 
     function getLeaf() external view returns (address) {
-        return address(i_leaf);
+        return address(_i_leaf);
     }
 
     function getCollateralTokenPriceFeed(
         address token
     ) external view returns (address) {
-        return s_priceFeeds[token];
+        return _s_priceFeeds[token];
     }
 
     function getHealthFactor(address user) external view returns (uint256) {
