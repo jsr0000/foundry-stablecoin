@@ -10,6 +10,7 @@ import {LEAFStableCoin} from "src/LEAFStableCoin.sol";
 import {HelperConfig} from "script/HelperConfig.s.sol";
 import {IERC20} from "lib/forge-std/src/interfaces/IERC20.sol";
 import {Handler} from "test/fuzz/Handler.t.sol";
+import {console} from "lib/forge-std/src/console.sol";
 
 contract InvariantsTest is StdInvariant, Test {
     LEAFEngine engine;
@@ -34,6 +35,12 @@ contract InvariantsTest is StdInvariant, Test {
 
         uint256 wethValue = engine.getUsdValue(weth, totalWethDeposited);
         uint256 wbtcValue = engine.getUsdValue(wbtc, totalWbtcDeposited);
+
+        console.log("wethValue: %s", wethValue);
+        console.log("wbtcValue: %s", wbtcValue);
+        console.log("total supply: ", totalSupply);
+        console.log("times mint is called: ", handler.timesMintIsCalled());
+
 
         assert(wethValue + wbtcValue >= totalSupply);
     }
