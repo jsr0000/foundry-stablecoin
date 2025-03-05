@@ -40,6 +40,7 @@ import {LEAFStableCoin} from "src/LEAFStableCoin.sol";
 import {ReentrancyGuard} from "lib/openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol";
 import {IERC20} from "lib/forge-std/src/interfaces/IERC20.sol";
 import {AggregatorV3Interface} from "lib/chainlink-brownie-contracts/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
+import {OracleLib} from "src/libraries/OracleLib.sol";
 
 contract LEAFEngine is ReentrancyGuard {
     /* ERRORS */
@@ -52,6 +53,10 @@ contract LEAFEngine is ReentrancyGuard {
     error LEAFEngine__MintFailed();
     error LEAFEngine__HealthFactorOk();
     error LEAFEngine__HealthFactorNotImproved();
+
+    /* TYPES */
+
+    using OracleLib for AggregatorV3Interface;
 
     /* STATE VAIRABLES */
 
@@ -201,7 +206,7 @@ contract LEAFEngine is ReentrancyGuard {
         _revertIfHealthFactorIsBroken(msg.sender);
     }
 
-   function redeemCollateralForLEAF(
+    function redeemCollateralForLEAF(
         address tokenCollateralAddress,
         uint256 amountCollateral,
         uint256 amountLEAFToBurn
@@ -211,7 +216,12 @@ contract LEAFEngine is ReentrancyGuard {
         isAllowedToken(tokenCollateralAddress)
     {
         _burnLEAF(amountLEAFToBurn, msg.sender, msg.sender);
-        _redeemCollateral(tokenCollateralAddress, amountCollateral, msg.sender, msg.sender);
+        _redeemCollateral(
+            tokenCollateralAddress,
+            amountCollateral,
+            msg.sender,
+            msg.sender
+        );
         _revertIfHealthFactorIsBroken(msg.sender);
     }
 
@@ -342,7 +352,7 @@ contract LEAFEngine is ReentrancyGuard {
         uint256 amountLeafToBurn,
         address onBehalfOf,
         address leafFrom
-    ) private  {
+    ) private {
         _s_LEAFMinted[onBehalfOf] -= amountLeafToBurn;
         bool success = _i_leaf.transferFrom(
             leafFrom,
@@ -375,17 +385,26 @@ contract LEAFEngine is ReentrancyGuard {
         AggregatorV3Interface priceFeed = AggregatorV3Interface(
             _s_priceFeeds[token]
         );
-        (, int256 price, , , ) = priceFeed.latestRoundData();
+        (, int256 price, , , ) = priceFeed.staleCheckLatestRoundData();
         return
             ((uint256(price) * _ADDITIONAL_FEED_PRECISION) * amount) /
             _PRECISION;
     }
 
-    function getCollateralBalanceOfUser(address user, address token) external view returns (uint256) {
+    function getCollateralBalanceOfUser(
+        address user,
+        address token
+    ) external view returns (uint256) {
         return _s_collateralDeposited[user][token];
     }
 
-    function getAccountInformation(address user) external view returns(uint256 totalLeafMinted, uint256 collateralValueInUsd) {
+    function getAccountInformation(
+        address user
+    )
+        external
+        view
+        returns (uint256 totalLeafMinted, uint256 collateralValueInUsd)
+    {
         return _getAccountInformation(user);
     }
 
@@ -396,7 +415,7 @@ contract LEAFEngine is ReentrancyGuard {
         AggregatorV3Interface priceFeed = AggregatorV3Interface(
             _s_priceFeeds[token]
         );
-        (, int256 price, , , ) = priceFeed.latestRoundData();
+        (, int256 price, , , ) = priceFeed.staleCheckLatestRoundData();
 
         return
             (usdAmountInWei * _PRECISION) /

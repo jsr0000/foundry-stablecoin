@@ -6,6 +6,7 @@ import {Test} from "lib/forge-std/src/Test.sol";
 import {LEAFEngine} from "src/LEAFEngine.sol";
 import {LEAFStableCoin} from "src/LEAFStableCoin.sol";
 import {ERC20Mock} from "lib/openzeppelin-contracts/contracts/mocks/token/ERC20Mock.sol";
+import {MockV3Aggregator} from "lib/chainlink-brownie-contracts/contracts/src/v0.8/tests/MockV3Aggregator.sol";
 
 contract Handler is Test {
     LEAFEngine engine;
@@ -15,6 +16,7 @@ contract Handler is Test {
 
     uint256 public timesMintIsCalled;
     address[] public usersWithCollateralDeposited;
+    MockV3Aggregator public ethUsdPriceFeed;
 
     uint256 MAX_DEPOSIT_SIZE = type(uint96).max;
 
@@ -25,6 +27,8 @@ contract Handler is Test {
         address[] memory collateralTokens = engine.getCollateralTokens();
         weth = ERC20Mock(collateralTokens[0]);
         wbtc = ERC20Mock(collateralTokens[1]);
+
+        ethUsdPriceFeed = MockV3Aggregator(engine.getCollateralTokenPriceFeed(address(weth)));
     }
 
     function depositCollateral(
@@ -81,6 +85,12 @@ contract Handler is Test {
         vm.stopPrank();
         timesMintIsCalled++;
     }
+
+    // THIS BREAKS THE INVARIANT SUITE BY SIMULATING A POTENTIAL SUDDEN DROP IN COLLATERAL PRICE //
+    // function updateCollateralPrice(uint96 newPrice) public {
+    //     int256 newPriceInt = int256(uint256(newPrice));
+    //     ethUsdPriceFeed.updateAnswer(newPriceInt);
+    // }
 
     // HELPER FUNCTIONS //
 
