@@ -44,4 +44,4 @@ endif
 deploy:
 	@forge script script/DeployDSC.s.sol:DeployDSC $(NETWORK_ARGS)
 
-forge script script/DeployDSC.s.sol:DeployDSC --rpc-url $(SEPOLIA_RPC_URL) --private-key $(PRIVATE_KEY) --broadcast --verify --etherscan-api-key $(ETHERSCAN_API_KEY) -vvvv
+forge script script/DeployLeaf.s.sol:DeployLeaf --rpc-url $(SEPOLIA_RPC_URL) --private-key $(PRIVATE_KEY) --broadcast --verify --etherscan-api-key $(ETHERSCAN_API_KEY) -vvvv

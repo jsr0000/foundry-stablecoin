@@ -35,11 +35,11 @@ pragma solidity ^0.8.19;
  * @notice  This contract is the core of the LEAF system. It handles all the logic for minting and redeeming DSC, as well as depositing and withdrawing collateral.
  * @notice  This contract is very loosely based on the MakerDAO DSS (DAI) system.
  */
-
 import {LEAFStableCoin} from "src/LEAFStableCoin.sol";
-import {ReentrancyGuard} from "lib/openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol";
+import {ReentrancyGuard} from "lib/openzeppelin-contracts/contracts/security/ReentrancyGuard.sol";
 import {IERC20} from "lib/forge-std/src/interfaces/IERC20.sol";
-import {AggregatorV3Interface} from "lib/chainlink-brownie-contracts/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
+import {AggregatorV3Interface} from
+    "lib/chainlink-brownie-contracts/contracts/src/v0.4/interfaces/AggregatorV3Interface.sol";
 import {OracleLib} from "src/libraries/OracleLib.sol";
 
 contract LEAFEngine is ReentrancyGuard {
@@ -61,8 +61,7 @@ contract LEAFEngine is ReentrancyGuard {
     /* STATE VAIRABLES */
 
     mapping(address token => address priceFeed) private _s_priceFeeds;
-    mapping(address user => mapping(address token => uint256 amount))
-        private _s_collateralDeposited;
+    mapping(address user => mapping(address token => uint256 amount)) private _s_collateralDeposited;
     mapping(address user => uint256 amountLeafMinted) private _s_LEAFMinted;
     LEAFStableCoin private immutable _i_leaf;
     address[] private _s_collateralTokens;
@@ -76,16 +75,9 @@ contract LEAFEngine is ReentrancyGuard {
 
     /* EVENTS */
 
-    event CollateralDeposited(
-        address indexed user,
-        address indexed token,
-        uint256 indexed amount
-    );
+    event CollateralDeposited(address indexed user, address indexed token, uint256 indexed amount);
     event CollateralRedeemed(
-        address indexed redeemedFrom,
-        address indexed redeemedTo,
-        address indexed token,
-        uint256 amount
+        address indexed redeemedFrom, address indexed redeemedTo, address indexed token, uint256 amount
     );
 
     /* MODIFIERS */
@@ -106,11 +98,7 @@ contract LEAFEngine is ReentrancyGuard {
 
     /* CONSTRUCTOR */
 
-    constructor(
-        address[] memory tokenAddresses,
-        address[] memory priceFeedAddresses,
-        address leafAddress
-    ) {
+    constructor(address[] memory tokenAddresses, address[] memory priceFeedAddresses, address leafAddress) {
         if (tokenAddresses.length != priceFeedAddresses.length) {
             revert LEAFEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength();
         }
@@ -128,28 +116,15 @@ contract LEAFEngine is ReentrancyGuard {
      * @param   tokenCollateralAddress  The ERC20 token address of the collateral your depositing.
      * @param   amountCollateral  The amount of collateral your depositing.
      */
-    function depositCollateral(
-        address tokenCollateralAddress,
-        uint256 amountCollateral
-    )
+    function depositCollateral(address tokenCollateralAddress, uint256 amountCollateral)
         public
         moreThanZero(amountCollateral)
         isAllowedToken(tokenCollateralAddress)
         nonReentrant
     {
-        _s_collateralDeposited[msg.sender][
-            tokenCollateralAddress
-        ] += amountCollateral;
-        emit CollateralDeposited(
-            msg.sender,
-            tokenCollateralAddress,
-            amountCollateral
-        );
-        bool success = IERC20(tokenCollateralAddress).transferFrom(
-            msg.sender,
-            address(this),
-            amountCollateral
-        );
+        _s_collateralDeposited[msg.sender][tokenCollateralAddress] += amountCollateral;
+        emit CollateralDeposited(msg.sender, tokenCollateralAddress, amountCollateral);
+        bool success = IERC20(tokenCollateralAddress).transferFrom(msg.sender, address(this), amountCollateral);
 
         if (!success) {
             revert LEAFEngine__TransferFailed();
@@ -160,9 +135,7 @@ contract LEAFEngine is ReentrancyGuard {
      * @param   amountLeafToMint  The amount of LEAF you want to mint.
      * You can only mint LEAF if you have enough collateral.
      */
-    function mintLEAF(
-        uint256 amountLeafToMint
-    ) public moreThanZero(amountLeafToMint) nonReentrant {
+    function mintLEAF(uint256 amountLeafToMint) public moreThanZero(amountLeafToMint) nonReentrant {
         _s_LEAFMinted[msg.sender] += amountLeafToMint;
         _revertIfHealthFactorIsBroken(msg.sender);
         bool minted = _i_leaf.mint(msg.sender, amountLeafToMint);
@@ -187,16 +160,12 @@ contract LEAFEngine is ReentrancyGuard {
         mintLEAF(amountLeafToMint);
     }
 
-    function redeemCollateral(
-        address tokenCollateralAddress,
-        uint256 amountCollateral
-    ) public moreThanZero(amountCollateral) nonReentrant {
-        _redeemCollateral(
-            tokenCollateralAddress,
-            amountCollateral,
-            msg.sender,
-            msg.sender
-        );
+    function redeemCollateral(address tokenCollateralAddress, uint256 amountCollateral)
+        public
+        moreThanZero(amountCollateral)
+        nonReentrant
+    {
+        _redeemCollateral(tokenCollateralAddress, amountCollateral, msg.sender, msg.sender);
 
         _revertIfHealthFactorIsBroken(msg.sender);
     }
@@ -206,22 +175,13 @@ contract LEAFEngine is ReentrancyGuard {
         _revertIfHealthFactorIsBroken(msg.sender);
     }
 
-    function redeemCollateralForLEAF(
-        address tokenCollateralAddress,
-        uint256 amountCollateral,
-        uint256 amountLEAFToBurn
-    )
+    function redeemCollateralForLEAF(address tokenCollateralAddress, uint256 amountCollateral, uint256 amountLEAFToBurn)
         external
         moreThanZero(amountCollateral)
         isAllowedToken(tokenCollateralAddress)
     {
         _burnLEAF(amountLEAFToBurn, msg.sender, msg.sender);
-        _redeemCollateral(
-            tokenCollateralAddress,
-            amountCollateral,
-            msg.sender,
-            msg.sender
-        );
+        _redeemCollateral(tokenCollateralAddress, amountCollateral, msg.sender, msg.sender);
         _revertIfHealthFactorIsBroken(msg.sender);
     }
 
@@ -235,33 +195,23 @@ contract LEAFEngine is ReentrancyGuard {
      * @param   user  The user who is insolvent. They have to have a _healthFactor below _MIN_HEALTH_FACTOR.
      * @param   debtToCover  The amount of LEAF to burn in order to cover the users debt.
      */
-    function liquidate(
-        address collateral,
-        address user,
-        uint256 debtToCover
-    ) external moreThanZero(debtToCover) nonReentrant {
+    function liquidate(address collateral, address user, uint256 debtToCover)
+        external
+        moreThanZero(debtToCover)
+        nonReentrant
+    {
         uint256 startingUserHealthFactor = _healthFactor(user);
         if (startingUserHealthFactor > _MIN_HEALTH_FACTOR) {
             revert LEAFEngine__HealthFactorOk();
         }
 
-        uint256 tokenAmountFromDebtCovered = getTokenAmountFromUsd(
-            collateral,
-            debtToCover
-        );
+        uint256 tokenAmountFromDebtCovered = getTokenAmountFromUsd(collateral, debtToCover);
 
-        uint256 bonusCollateral = (tokenAmountFromDebtCovered *
-            _LIQUIDATION_BONUS) / _LIQUIDATION_PRECISION;
+        uint256 bonusCollateral = (tokenAmountFromDebtCovered * _LIQUIDATION_BONUS) / _LIQUIDATION_PRECISION;
 
-        uint256 totalCollateralToRedeem = tokenAmountFromDebtCovered +
-            bonusCollateral;
+        uint256 totalCollateralToRedeem = tokenAmountFromDebtCovered + bonusCollateral;
 
-        _redeemCollateral(
-            collateral,
-            totalCollateralToRedeem,
-            user,
-            msg.sender
-        );
+        _redeemCollateral(collateral, totalCollateralToRedeem, user, msg.sender);
 
         _burnLEAF(debtToCover, user, msg.sender);
 
@@ -290,26 +240,22 @@ contract LEAFEngine is ReentrancyGuard {
      * If a user goes below 1, then they can be liquidated.
      */
     function _healthFactor(address user) private view returns (uint256) {
-        (
-            uint256 totalLeafMinted,
-            uint256 collateralValueInUsd
-        ) = _getAccountInformation(user);
+        (uint256 totalLeafMinted, uint256 collateralValueInUsd) = _getAccountInformation(user);
         return _calculateHealthFactor(totalLeafMinted, collateralValueInUsd);
     }
 
-    function _calculateHealthFactor(
-        uint256 totalLeafMinted,
-        uint256 collateralValueInUsd
-    ) internal pure returns (uint256) {
+    function _calculateHealthFactor(uint256 totalLeafMinted, uint256 collateralValueInUsd)
+        internal
+        pure
+        returns (uint256)
+    {
         if (totalLeafMinted == 0) return type(uint256).max;
-        uint256 collateralAdjustedForThreshold = (collateralValueInUsd *
-            _LIQUIDATION_THRESHOLD) / _LIQUIDATION_PRECISION;
+        uint256 collateralAdjustedForThreshold =
+            (collateralValueInUsd * _LIQUIDATION_THRESHOLD) / _LIQUIDATION_PRECISION;
         return (collateralAdjustedForThreshold * _PRECISION) / totalLeafMinted;
     }
 
-    function _getAccountInformation(
-        address user
-    )
+    function _getAccountInformation(address user)
         private
         view
         returns (uint256 totalLeafMinted, uint256 collateralValueInUsd)
@@ -318,47 +264,21 @@ contract LEAFEngine is ReentrancyGuard {
         collateralValueInUsd = getAccountCollateralValue(user);
     }
 
-    function _redeemCollateral(
-        address tokenCollateralAddress,
-        uint256 amountCollateral,
-        address from,
-        address to
-    ) private {
-        _s_collateralDeposited[from][
-            tokenCollateralAddress
-        ] -= amountCollateral;
-        emit CollateralRedeemed(
-            from,
-            to,
-            tokenCollateralAddress,
-            amountCollateral
-        );
-        bool success = IERC20(tokenCollateralAddress).transfer(
-            to,
-            amountCollateral
-        );
+    function _redeemCollateral(address tokenCollateralAddress, uint256 amountCollateral, address from, address to)
+        private
+    {
+        _s_collateralDeposited[from][tokenCollateralAddress] -= amountCollateral;
+        emit CollateralRedeemed(from, to, tokenCollateralAddress, amountCollateral);
+        bool success = IERC20(tokenCollateralAddress).transfer(to, amountCollateral);
         if (!success) {
             revert LEAFEngine__TransferFailed();
         }
-        emit CollateralRedeemed(
-            from,
-            to,
-            tokenCollateralAddress,
-            amountCollateral
-        );
+        emit CollateralRedeemed(from, to, tokenCollateralAddress, amountCollateral);
     }
 
-    function _burnLEAF(
-        uint256 amountLeafToBurn,
-        address onBehalfOf,
-        address leafFrom
-    ) private {
+    function _burnLEAF(uint256 amountLeafToBurn, address onBehalfOf, address leafFrom) private {
         _s_LEAFMinted[onBehalfOf] -= amountLeafToBurn;
-        bool success = _i_leaf.transferFrom(
-            leafFrom,
-            address(this),
-            amountLeafToBurn
-        );
+        bool success = _i_leaf.transferFrom(leafFrom, address(this), amountLeafToBurn);
         if (!success) {
             revert LEAFEngine__TransferFailed();
         }
@@ -367,9 +287,7 @@ contract LEAFEngine is ReentrancyGuard {
 
     /* PUBLIC & EXTERNAL VIEW FUNCTIONS */
 
-    function getAccountCollateralValue(
-        address user
-    ) public view returns (uint256 totalCollateralValueInUsd) {
+    function getAccountCollateralValue(address user) public view returns (uint256 totalCollateralValueInUsd) {
         for (uint256 i = 0; i < _s_collateralTokens.length; i++) {
             address token = _s_collateralTokens[i];
             uint256 amount = _s_collateralDeposited[user][token];
@@ -378,29 +296,17 @@ contract LEAFEngine is ReentrancyGuard {
         return totalCollateralValueInUsd;
     }
 
-    function getUsdValue(
-        address token,
-        uint256 amount
-    ) public view returns (uint256) {
-        AggregatorV3Interface priceFeed = AggregatorV3Interface(
-            _s_priceFeeds[token]
-        );
-        (, int256 price, , , ) = priceFeed.staleCheckLatestRoundData();
-        return
-            ((uint256(price) * _ADDITIONAL_FEED_PRECISION) * amount) /
-            _PRECISION;
+    function getUsdValue(address token, uint256 amount) public view returns (uint256) {
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(_s_priceFeeds[token]);
+        (, int256 price,,,) = priceFeed.staleCheckLatestRoundData();
+        return ((uint256(price) * _ADDITIONAL_FEED_PRECISION) * amount) / _PRECISION;
     }
 
-    function getCollateralBalanceOfUser(
-        address user,
-        address token
-    ) external view returns (uint256) {
+    function getCollateralBalanceOfUser(address user, address token) external view returns (uint256) {
         return _s_collateralDeposited[user][token];
     }
 
-    function getAccountInformation(
-        address user
-    )
+    function getAccountInformation(address user)
         external
         view
         returns (uint256 totalLeafMinted, uint256 collateralValueInUsd)
@@ -408,18 +314,11 @@ contract LEAFEngine is ReentrancyGuard {
         return _getAccountInformation(user);
     }
 
-    function getTokenAmountFromUsd(
-        address token,
-        uint256 usdAmountInWei
-    ) public view returns (uint256) {
-        AggregatorV3Interface priceFeed = AggregatorV3Interface(
-            _s_priceFeeds[token]
-        );
-        (, int256 price, , , ) = priceFeed.staleCheckLatestRoundData();
+    function getTokenAmountFromUsd(address token, uint256 usdAmountInWei) public view returns (uint256) {
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(_s_priceFeeds[token]);
+        (, int256 price,,,) = priceFeed.staleCheckLatestRoundData();
 
-        return
-            (usdAmountInWei * _PRECISION) /
-            (uint256(price) * _ADDITIONAL_FEED_PRECISION);
+        return (usdAmountInWei * _PRECISION) / (uint256(price) * _ADDITIONAL_FEED_PRECISION);
     }
 
     function getPrecision() external pure returns (uint256) {
@@ -454,9 +353,7 @@ contract LEAFEngine is ReentrancyGuard {
         return address(_i_leaf);
     }
 
-    function getCollateralTokenPriceFeed(
-        address token
-    ) external view returns (address) {
+    function getCollateralTokenPriceFeed(address token) external view returns (address) {
         return _s_priceFeeds[token];
     }
 

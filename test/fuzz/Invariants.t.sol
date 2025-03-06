@@ -23,7 +23,7 @@ contract InvariantsTest is StdInvariant, Test {
     function setUp() external {
         DeployLeaf deployer = new DeployLeaf();
         (leaf, engine, config) = deployer.run();
-        (, , weth, wbtc, ) = config.activeNetworkConfig();
+        (,, weth, wbtc,) = config.activeNetworkConfig();
         handler = new Handler(engine, leaf);
         targetContract(address(handler));
     }
@@ -40,7 +40,6 @@ contract InvariantsTest is StdInvariant, Test {
         console.log("wbtcValue: %s", wbtcValue);
         console.log("total supply: ", totalSupply);
         console.log("times mint is called: ", handler.timesMintIsCalled());
-
 
         assert(wethValue + wbtcValue >= totalSupply);
     }

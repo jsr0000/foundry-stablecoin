@@ -5,7 +5,7 @@ pragma solidity ^0.8.19;
 import {Test} from "lib/forge-std/src/Test.sol";
 import {LEAFEngine} from "src/LEAFEngine.sol";
 import {LEAFStableCoin} from "src/LEAFStableCoin.sol";
-import {ERC20Mock} from "lib/openzeppelin-contracts/contracts/mocks/token/ERC20Mock.sol";
+import {ERC20Mock} from "lib/openzeppelin-contracts/contracts/mocks/ERC20Mock.sol";
 import {MockV3Aggregator} from "lib/chainlink-brownie-contracts/contracts/src/v0.8/tests/MockV3Aggregator.sol";
 
 contract Handler is Test {
@@ -31,10 +31,7 @@ contract Handler is Test {
         ethUsdPriceFeed = MockV3Aggregator(engine.getCollateralTokenPriceFeed(address(weth)));
     }
 
-    function depositCollateral(
-        uint256 collateralSeed,
-        uint256 amountCollateral
-    ) public {
+    function depositCollateral(uint256 collateralSeed, uint256 amountCollateral) public {
         amountCollateral = bound(amountCollateral, 1, MAX_DEPOSIT_SIZE);
         ERC20Mock collateral = _getCollateralFromSeed(collateralSeed);
 
@@ -47,15 +44,9 @@ contract Handler is Test {
         usersWithCollateralDeposited.push(msg.sender);
     }
 
-    function redeemCollateral(
-        uint256 collateralSeed,
-        uint256 amountCollateral
-    ) public {
+    function redeemCollateral(uint256 collateralSeed, uint256 amountCollateral) public {
         ERC20Mock collateral = _getCollateralFromSeed(collateralSeed);
-        uint256 maxCollateralToRedeem = engine.getCollateralBalanceOfUser(
-            msg.sender,
-            address(collateral)
-        );
+        uint256 maxCollateralToRedeem = engine.getCollateralBalanceOfUser(msg.sender, address(collateral));
         amountCollateral = bound(amountCollateral, 1, maxCollateralToRedeem);
         engine.redeemCollateral(address(collateral), amountCollateral);
     }
@@ -64,14 +55,10 @@ contract Handler is Test {
         if (usersWithCollateralDeposited.length == 0) {
             return;
         }
-        address sender = usersWithCollateralDeposited[
-            addressSeed % usersWithCollateralDeposited.length
-        ];
-        (uint256 totalLeafMinted, uint256 collateralValueInUsd) = engine
-            .getAccountInformation(sender);
+        address sender = usersWithCollateralDeposited[addressSeed % usersWithCollateralDeposited.length];
+        (uint256 totalLeafMinted, uint256 collateralValueInUsd) = engine.getAccountInformation(sender);
 
-        int256 maxLeafToMint = (int256(collateralValueInUsd) / 2) -
-            int256(totalLeafMinted);
+        int256 maxLeafToMint = (int256(collateralValueInUsd) / 2) - int256(totalLeafMinted);
         if (maxLeafToMint < 0) {
             return;
         }
@@ -94,9 +81,7 @@ contract Handler is Test {
 
     // HELPER FUNCTIONS //
 
-    function _getCollateralFromSeed(
-        uint256 collateralSeed
-    ) private view returns (ERC20Mock) {
+    function _getCollateralFromSeed(uint256 collateralSeed) private view returns (ERC20Mock) {
         if (collateralSeed % 2 == 0) {
             return weth;
         }

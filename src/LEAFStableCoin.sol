@@ -45,7 +45,7 @@ contract LEAFStableCoin is ERC20Burnable, Ownable {
     error DecentralisedStableCoin__BurnAmountExceedsBalance();
     error DecentralisedStableCoin__CantMintToZeroAddress();
 
-    constructor() ERC20("Leaf", "LEAF") Ownable(address(msg.sender)) {}
+    constructor() ERC20("Leaf", "LEAF") Ownable() {}
 
     function burn(uint256 _amount) public override onlyOwner {
         uint256 balance = balanceOf(msg.sender);
@@ -58,10 +58,7 @@ contract LEAFStableCoin is ERC20Burnable, Ownable {
         super.burn(_amount);
     }
 
-    function mint(
-        address _to,
-        uint256 _amount
-    ) external onlyOwner returns (bool) {
+    function mint(address _to, uint256 _amount) external onlyOwner returns (bool) {
         if (_to == address(0)) {
             revert DecentralisedStableCoin__CantMintToZeroAddress();
         }
