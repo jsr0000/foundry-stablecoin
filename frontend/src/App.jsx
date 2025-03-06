@@ -1,61 +1,162 @@
-import { useState } from 'react'
-import './App.css'
-import { BrowserProvider } from 'ethers'
-import { ethers } from 'ethers'
+// App.jsx
+import React, { useState, useEffect } from 'react';
+import { ethers } from 'ethers';
+import './App.css';
+import StablecoinABI from './contracts/StablecoinABI.json';
 
-let provider, signer;
-export async function connectWallet() {
-  try {
-    // Check if Ethereum provider is available
-    if (window.ethereum) {
-      const provider = new BrowserProvider(window.ethereum);
-      await provider.send("eth_requestAccounts", []);
-      const signer = await provider.getSigner();
-      const address = await signer.getAddress();
-      document.getElementById('status').innerText = `Connected: ${address}`;
-    } else {
-      document.getElementById('status').innerText = 'Please install MetaMask!';
+// Components
+import Navbar from './components/Navbar.jsx';
+import ConnectWallet from './components/ConnectWallet.jsx';
+import StablecoinDashboard from './components/Dashboard.jsx';
+import Footer from './components/Footer.jsx';
+
+function App() {
+  const [account, setAccount] = useState('');
+  const [provider, setProvider] = useState(null);
+  const [signer, setSigner] = useState(null);
+  const [contract, setContract] = useState(null);
+  const [balance, setBalance] = useState('0');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [isMetaMaskInstalled, setIsMetaMaskInstalled] = useState(false);
+
+  // Replace with your deployed contract address
+  const contractAddress = '0x0000000000000000000000000000000000000000';
+
+  // Check if MetaMask is installed
+  useEffect(() => {
+    const checkMetaMaskInstalled = () => {
+      if (window.ethereum) {
+        setIsMetaMaskInstalled(true);
+      } else {
+        setIsMetaMaskInstalled(false);
+        setError('Please install MetaMask to use this application');
+      }
+    };
+    
+    checkMetaMaskInstalled();
+  }, []);
+
+  const connectWallet = async () => {
+    if (!isMetaMaskInstalled) {
+      setError('Please install MetaMask');
+      return;
     }
-  } catch (error) {
-    console.error(error);
-    document.getElementById('status').innerText = 'Connection failed';
-  }
+
+    try {
+      setIsLoading(true);
+      setError('');
+
+      // This line explicitly requests MetaMask to open
+      const accounts = await window.ethereum.request({ 
+        method: 'eth_requestAccounts' 
+      });
+      
+      if (accounts.length > 0) {
+        // Fix for ethers v6
+        const web3Provider = new ethers.BrowserProvider(window.ethereum);
+        const web3Signer = await web3Provider.getSigner();
+        
+        try {
+          // Make sure contract ABI is valid
+          const stablecoinContract = new ethers.Contract(
+            contractAddress,
+            StablecoinABI.abi,
+            web3Signer
+          );
+
+          setAccount(accounts[0]);
+          setProvider(web3Provider);
+          setSigner(web3Signer);
+          setContract(stablecoinContract);
+
+          // Get user balance (only if contract address is valid)
+          if (contractAddress !== '0x0000000000000000000000000000000000000000') {
+            try {
+              const userBalance = await stablecoinContract.balanceOf(accounts[0]);
+              // Update for ethers v6
+              setBalance(ethers.formatUnits(userBalance, 18));
+            } catch (balanceError) {
+              console.error("Error fetching balance:", balanceError);
+              // Continue with connection even if balance fetch fails
+            }
+          }
+        } catch (contractError) {
+          console.error("Contract initialization error:", contractError);
+          // Still set the account even if contract fails
+          setAccount(accounts[0]);
+        }
+      }
+    } catch (err) {
+      console.error("Wallet connection error:", err);
+      if (err.code === 4001) {
+        // User rejected the request
+        setError('Connection rejected. Please approve the MetaMask connection.');
+      } else {
+        setError('Failed to connect wallet: ' + (err.message || 'Unknown error'));
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const disconnect = () => {
+    setAccount('');
+    setProvider(null);
+    setSigner(null);
+    setContract(null);
+    setBalance('0');
+  };
+
+  useEffect(() => {
+    // Set up event listeners if MetaMask is installed
+    if (window.ethereum) {
+      window.ethereum.on('accountsChanged', (accounts) => {
+        if (accounts.length > 0) {
+          connectWallet();
+        } else {
+          disconnect();
+        }
+      });
+
+      window.ethereum.on('chainChanged', () => {
+        window.location.reload();
+      });
+      
+      // Clean up event listeners when component unmounts
+      return () => {
+        window.ethereum.removeListener('accountsChanged', connectWallet);
+        window.ethereum.removeListener('chainChanged', () => {
+          window.location.reload();
+        });
+      };
+    }
+  }, [isMetaMaskInstalled]);
+
+  return (
+    <div className="app">
+      <Navbar account={account} />
+
+      <main className="container">
+        {!account ? (
+          <ConnectWallet 
+            connectWallet={connectWallet} 
+            isLoading={isLoading} 
+            error={error} 
+            isMetaMaskInstalled={isMetaMaskInstalled}
+          />
+        ) : (
+          <StablecoinDashboard
+            account={account}
+            balance={balance}
+            contract={contract}
+          />
+        )}
+      </main>
+
+      <Footer />
+    </div>
+  );
 }
 
-export async function mintTokens() {
-  try {
-    // Add your minting logic here
-    document.getElementById('status').innerText = 'Minting tokens...';
-  } catch (error) {
-    console.error(error);
-    document.getElementById('status').innerText = 'Minting failed';
-  }
-}
-
-export async function burnTokens() {
-  try {
-    // Add your burning logic here
-    document.getElementById('status').innerText = 'Burning tokens...';
-  } catch (error) {
-    console.error(error);
-    document.getElementById('status').innerText = 'Burning failed';
-  }
-}
-
-export async function transferTokens() {
-  try {
-    // Add your transfer logic here
-    document.getElementById('status').innerText = 'Transferring tokens...';
-  } catch (error) {
-    console.error(error);
-    document.getElementById('status').innerText = 'Transfer failed';
-  }
-}
-
-// Make functions available on the window object
-window.connectWallet = connectWallet;
-window.mintTokens = mintTokens;
-window.burnTokens = burnTokens;
-window.transferTokens = transferTokens;
-
-console.log('Ethers version:', ethers.version);
+export default App;

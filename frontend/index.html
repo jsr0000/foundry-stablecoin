@@ -1,27 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Stablecoin Interface</title>
-  <link rel="stylesheet" href="src/App.css">
-</head>
-
-<body>
-  <div class="container">
-    <h1>Stablecoin Interface</h1>
-    <button onclick="connectWallet()">Connect Wallet</button>
-    <button onclick="mintTokens()">Mint Tokens</button>
-    <button onclick="burnTokens()">Burn Tokens</button>
-    <button onclick="transferTokens()">Transfer Tokens</button>
-    <p id="status"></p>
-  </div>
-
-  <!-- Load ethers.js first -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.1/ethers.umd.min.js"></script>
-  <!-- Then load your app -->
-  <script type="module" src="/src/App.jsx"></script>
-</body>
-
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#3b82f6" />
+    <meta name="description" content="StableFi - A decentralized stablecoin protocol" />
+    
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- Google Fonts - Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <title>StableFi | Decentralized Stablecoin</title>
+  </head>
+  <body>
+    <!-- This div is where React will mount your application -->
+    <div id="root"></div>
+    
+    <!-- In production, this would be replaced with bundled JavaScript files -->
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
 </html>
