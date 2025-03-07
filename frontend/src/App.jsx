@@ -21,7 +21,7 @@ function App() {
   const [isMetaMaskInstalled, setIsMetaMaskInstalled] = useState(false);
 
   // Replace with your deployed contract address
-  const contractAddress = '0x0000000000000000000000000000000000000000';
+  const contractAddress = '0xEd9014597218ab886faA057B23E2bF9C0F9FbbfB';
 
   // Check if MetaMask is installed
   useEffect(() => {
