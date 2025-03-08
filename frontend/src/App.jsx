@@ -15,7 +15,6 @@ function App() {
   const [provider, setProvider] = useState(null);
   const [signer, setSigner] = useState(null);
   const [contract, setContract] = useState(null);
-  const [balance, setBalance] = useState('0');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [isMetaMaskInstalled, setIsMetaMaskInstalled] = useState(false);
@@ -33,7 +32,7 @@ function App() {
         setError('Please install MetaMask to use this application');
       }
     };
-    
+
     checkMetaMaskInstalled();
   }, []);
 
@@ -48,20 +47,20 @@ function App() {
       setError('');
 
       // This line explicitly requests MetaMask to open
-      const accounts = await window.ethereum.request({ 
-        method: 'eth_requestAccounts' 
+      const accounts = await window.ethereum.request({
+        method: 'eth_requestAccounts'
       });
-      
+
       if (accounts.length > 0) {
-        // Fix for ethers v6
+        // Create ethers provider and signer
         const web3Provider = new ethers.BrowserProvider(window.ethereum);
         const web3Signer = await web3Provider.getSigner();
-        
+
         try {
-          // Make sure contract ABI is valid
+          // Make sure to access the first array in the ABI structure
           const stablecoinContract = new ethers.Contract(
             contractAddress,
-            StablecoinABI.abi,
+            StablecoinABI.abi[0], // Access the first array in the ABI structure
             web3Signer
           );
 
@@ -69,22 +68,11 @@ function App() {
           setProvider(web3Provider);
           setSigner(web3Signer);
           setContract(stablecoinContract);
-
-          // Get user balance (only if contract address is valid)
-          if (contractAddress !== '0x0000000000000000000000000000000000000000') {
-            try {
-              const userBalance = await stablecoinContract.balanceOf(accounts[0]);
-              // Update for ethers v6
-              setBalance(ethers.formatUnits(userBalance, 18));
-            } catch (balanceError) {
-              console.error("Error fetching balance:", balanceError);
-              // Continue with connection even if balance fetch fails
-            }
-          }
         } catch (contractError) {
           console.error("Contract initialization error:", contractError);
           // Still set the account even if contract fails
           setAccount(accounts[0]);
+          setError(`Contract initialization error: ${contractError.message}`);
         }
       }
     } catch (err) {
@@ -105,7 +93,6 @@ function App() {
     setProvider(null);
     setSigner(null);
     setContract(null);
-    setBalance('0');
   };
 
   useEffect(() => {
@@ -122,7 +109,7 @@ function App() {
       window.ethereum.on('chainChanged', () => {
         window.location.reload();
       });
-      
+
       // Clean up event listeners when component unmounts
       return () => {
         window.ethereum.removeListener('accountsChanged', connectWallet);
@@ -139,16 +126,15 @@ function App() {
 
       <main className="container">
         {!account ? (
-          <ConnectWallet 
-            connectWallet={connectWallet} 
-            isLoading={isLoading} 
-            error={error} 
+          <ConnectWallet
+            connectWallet={connectWallet}
+            isLoading={isLoading}
+            error={error}
             isMetaMaskInstalled={isMetaMaskInstalled}
           />
         ) : (
           <StablecoinDashboard
             account={account}
-            balance={balance}
             contract={contract}
           />
         )}

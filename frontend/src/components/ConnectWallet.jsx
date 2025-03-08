@@ -5,9 +5,9 @@ const ConnectWallet = ({ connectWallet, isLoading, error, isMetaMaskInstalled })
   return (
     <div className="connect-wallet-container">
       <div className="connect-card">
-        <img src="/placeholder-logo.png" alt="StableFi Logo" className="large-logo" />
-        <h2>Welcome to StableFi</h2>
-        <p>Connect your wallet to interact with the StableFi stablecoin protocol</p>
+        <img src="/public/leaf-svgrepo-com.svg" alt="Leaf Logo" className="large-logo" />
+        <h2>Welcome to Leaf</h2>
+        <p>Connect your wallet to interact with the Leaf stablecoin protocol</p>
         
         <button 
           className="connect-button" 

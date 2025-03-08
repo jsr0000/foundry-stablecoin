@@ -5,27 +5,24 @@ const Footer = () => {
     <footer className="footer">
       <div className="footer-content">
         <div className="footer-section">
-          <h3>StableFi</h3>
-          <p>A decentralized stablecoin protocol built on Ethereum</p>
+          <h3>Leaf</h3>
+          <p>A decentralized stablecoin protocol built on Ethereum Sepolia (Not Production)</p>
         </div>
         
         <div className="footer-section">
           <h3>Resources</h3>
-          <a href="#docs">Documentation</a>
-          <a href="#github">GitHub</a>
-          <a href="#audit">Audit Report</a>
+          <a href="https://github.com/jsr0000/foundry-stablecoin">GitHub</a>
         </div>
         
         <div className="footer-section">
-          <h3>Community</h3>
-          <a href="#discord">Discord</a>
-          <a href="#twitter">Twitter</a>
-          <a href="#telegram">Telegram</a>
+          <h3>Builder</h3>
+          <a href="https://www.linkedin.com/in/josh-regnart-567651239/">LinkedIn</a>
+          <a href="https://github.com/jsr0000">Github</a>
         </div>
       </div>
       
       <div className="footer-bottom">
-        <p>&copy; 2025 StableFi. All rights reserved.</p>
+        <p>&copy; 2025 Leaf. All rights reserved.</p>
       </div>
     </footer>
   );

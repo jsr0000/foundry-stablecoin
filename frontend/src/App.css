@@ -1,8 +1,8 @@
 /* App.css */
 :root {
-  --primary: #3b82f6;
-  --primary-dark: #2563eb;
-  --secondary: #10b981;
+  --primary: #228b22;
+  --primary-dark: #006400;
+  --secondary: #32cd32;
   --dark: #1f2937;
   --light: #f9fafb;
   --gray: #9ca3af;
@@ -208,249 +208,178 @@ body {
 
 /* Dashboard Styles */
 .dashboard-container {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
 }
 
 .balance-card {
-  background-color: white;
-  border-radius: 16px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  padding: 2rem;
-  text-align: center;
+  background: linear-gradient(135deg, #3a3f51 0%, #1f2235 100%);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  color: white;
 }
 
-.balance-card h2 {
-  font-size: 1.25rem;
-  color: var(--gray);
-  margin-bottom: 1rem;
-}
-
-.token-balance {
+.account-stats {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
+  justify-content: space-between;
+  margin-top: 16px;
 }
 
-.currency-symbol {
-  font-size: 2rem;
-  color: var(--primary);
+.stat-item {
+  text-align: center;
+  flex: 1;
+  padding: 12px;
+}
+
+.stat-item h3 {
+  font-size: 14px;
+  margin-bottom: 8px;
+  opacity: 0.8;
+  font-weight: 500;
 }
 
 .balance-amount {
-  font-size: 3rem;
+  font-size: 24px;
   font-weight: 700;
-  color: var(--dark);
 }
 
-.balance-usd {
-  color: var(--gray);
-  font-size: 1rem;
+.danger {
+  color: #ff5353;
 }
 
 .action-tabs {
-  background-color: white;
-  border-radius: 16px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  background: #ffffff;
+  border-radius: 12px;
   overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .tab-headers {
   display: flex;
-  border-bottom: 1px solid var(--light-gray);
+  overflow-x: auto;
+  border-bottom: 1px solid #e0e0e0;
 }
 
 .tab-btn {
-  flex: 1;
-  padding: 1rem;
+  padding: 16px 20px;
   background: none;
   border: none;
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--gray);
   cursor: pointer;
-  transition: all 0.2s;
+  font-size: 16px;
+  color: #666;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 .tab-btn.active {
-  color: var(--primary);
-  border-bottom: 2px solid var(--primary);
+  color: #4e8cff;
+  border-bottom: 3px solid #4e8cff;
+  font-weight: 600;
 }
 
 .tab-content {
-  padding: 2rem;
+  padding: 24px;
 }
 
-.stats-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+.form-group {
+  margin-bottom: 20px;
 }
 
-.stat-card {
-  flex: 1;
-  background-color: #f9fafb;
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #333;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #ddd;
   border-radius: 8px;
-  padding: 1.5rem;
-  text-align: center;
-}
-
-.stat-card h3 {
-  font-size: 0.875rem;
-  color: var(--gray);
-  margin-bottom: 0.5rem;
-}
-
-.stat-card p {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--dark);
-}
-
-.recent-transactions h3 {
-  margin-bottom: 1rem;
-  font-size: 1.25rem;
-}
-
-.transaction-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.transaction-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem;
-  background-color: #f9fafb;
-  border-radius: 8px;
-}
-
-.tx-type {
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-.tx-type.mint {
-  background-color: rgba(16, 185, 129, 0.1);
-  color: var(--success);
-}
-
-.tx-type.redeem {
-  background-color: rgba(239, 68, 68, 0.1);
-  color: var(--danger);
-}
-
-.tx-amount {
-  font-weight: 600;
-}
-
-.tx-date {
-  font-size: 0.875rem;
-  color: var(--gray);
-}
-
-/* Mint/Redeem Tab Styles */
-.mint-tab, .redeem-tab, .stake-tab {
-  padding: 1rem 0;
-}
-
-.mint-tab h3, .redeem-tab h3, .stake-tab h3 {
-  margin-bottom: 0.5rem;
-  font-size: 1.25rem;
-}
-
-.mint-tab p, .redeem-tab p, .stake-tab p {
-  color: var(--gray);
-  margin-bottom: 1.5rem;
-}
-
-.input-group {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.input-group input {
-  flex: 1;
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--light-gray);
-  border-radius: 8px;
-  font-size: 1rem;
+  font-size: 16px;
 }
 
 .action-button {
-  background-color: var(--primary);
+  width: 100%;
+  padding: 14px;
+  background: #4e8cff;
   color: white;
   border: none;
   border-radius: 8px;
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
+  font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background 0.2s;
 }
 
 .action-button:hover {
-  background-color: var(--primary-dark);
+  background: #3a7eff;
 }
 
 .action-button:disabled {
-  background-color: var(--light-gray);
+  background: #a4c1ff;
   cursor: not-allowed;
 }
 
+.tx-status {
+  margin: 16px 0;
+  padding: 12px;
+  background: #e8f4fd;
+  border-left: 4px solid #4e8cff;
+  border-radius: 4px;
+}
+
+.tx-status.error {
+  background: #fdeded;
+  border-left-color: #ff5353;
+}
+
 .info-box {
-  background-color: #f9fafb;
+  margin-top: 24px;
+  padding: 16px;
+  background: #f5f7fa;
   border-radius: 8px;
-  padding: 1rem;
+  font-size: 14px;
+}
+
+.info-box h4 {
+  margin-top: 0;
+  margin-bottom: 8px;
+  color: #333;
 }
 
 .info-box p {
-  margin-bottom: 0.5rem;
-}
-
-.info-box p:last-child {
   margin-bottom: 0;
+  color: #666;
 }
 
-.tx-status {
-  margin-bottom: 1rem;
-  padding: 0.75rem;
-  border-radius: 8px;
-  font-size: 0.875rem;
-  background-color: #f3f4f6;
-  color: var(--dark);
+.info-box.warning {
+  background: #fff8eb;
+  border-left: 4px solid #ffb74d;
 }
 
-.coming-soon {
+.form-divider {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 3rem 0;
-  text-align: center;
+  margin: 24px 0;
+  color: #999;
 }
 
-.coming-soon img {
-  margin-bottom: 1.5rem;
-  opacity: 0.7;
+.form-divider:before,
+.form-divider:after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid #e0e0e0;
 }
 
-.coming-soon h4 {
-  font-size: 1.25rem;
-  margin-bottom: 0.5rem;
-}
-
-.coming-soon p {
-  color: var(--gray);
+.form-divider span {
+  padding: 0 16px;
+  font-size: 14px;
 }
 
 /* Footer Styles */
@@ -509,25 +438,25 @@ body {
     flex-direction: column;
     gap: 1rem;
   }
-  
+
   .navbar-menu {
     width: 100%;
     overflow-x: auto;
     padding-bottom: 0.5rem;
   }
-  
+
   .stats-row {
     flex-direction: column;
   }
-  
+
   .features {
     flex-direction: column;
   }
-  
+
   .input-group {
     flex-direction: column;
   }
-  
+
   .footer-content {
     flex-direction: column;
   }
